@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+
+    
+
+    
+
+
+
+    <meta charset="utf-8">
+    
+    
+    
+    <title>NGINX 代理TOMCAT请求与静态缓存 | Slevin\&#39;s Blog</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    
+    <meta name="theme-color" content="#3F51B5">
+    
+    
+    <meta name="keywords" content="NGINX">
+    <meta name="description" content="通常情况下，我们会使用一个静态Web容器代理Tomcat或Jetty容器中的网络请求，实现将动态请求部分交由Tomcat处理，静态文件由Nginx来做缓存管理。 安装系统环境1CentOS 6.5 安装Nginx1yum install nginx 安装Tomcat1访问 http://tomcat.apache.org/ 下载与jre相适应的Tomcat 配置配置Nginx通过yum安装的Ngi">
+<meta name="keywords" content="NGINX">
+<meta property="og:type" content="article">
+<meta property="og:title" content="NGINX 代理TOMCAT请求与静态缓存">
+<meta property="og:url" content="http://blog.slevinhsu.com/2018/04/25/NGINX 代理TOMCAT请求与静态缓存/index.html">
+<meta property="og:site_name" content="Slevin\&#39;s Blog">
+<meta property="og:description" content="通常情况下，我们会使用一个静态Web容器代理Tomcat或Jetty容器中的网络请求，实现将动态请求部分交由Tomcat处理，静态文件由Nginx来做缓存管理。 安装系统环境1CentOS 6.5 安装Nginx1yum install nginx 安装Tomcat1访问 http://tomcat.apache.org/ 下载与jre相适应的Tomcat 配置配置Nginx通过yum安装的Ngi">
+<meta property="og:locale" content="zh-cn">
+<meta property="og:updated_time" content="2018-04-28T07:57:07.874Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="NGINX 代理TOMCAT请求与静态缓存">
+<meta name="twitter:description" content="通常情况下，我们会使用一个静态Web容器代理Tomcat或Jetty容器中的网络请求，实现将动态请求部分交由Tomcat处理，静态文件由Nginx来做缓存管理。 安装系统环境1CentOS 6.5 安装Nginx1yum install nginx 安装Tomcat1访问 http://tomcat.apache.org/ 下载与jre相适应的Tomcat 配置配置Nginx通过yum安装的Ngi">
+    
+        <link rel="alternate" type="application/atom+xml" title="Slevin\&#39;s Blog" href="/atom.xml">
+    
+    <link rel="shortcut icon" href="/favicon.ico">
+    <link rel="stylesheet" href="//unpkg.com/hexo-theme-material-indigo@latest/css/style.css">
+    <script>window.lazyScripts=[]</script>
+
+    <!-- custom head -->
+    
+
+</head>
+
+<body>
+    <div id="loading" class="active"></div>
+
+    <aside id="menu" class="hide" >
+  <div class="inner flex-row-vertical">
+    <a href="javascript:;" class="header-icon waves-effect waves-circle waves-light" id="menu-off">
+        <i class="icon icon-lg icon-close"></i>
+    </a>
+    <div class="brand-wrap" style="background-image:url(/img/brand.jpg)">
+      <div class="brand">
+        <a href="/" class="avatar waves-effect waves-circle waves-light">
+          <img src="/img/avatar.gif">
+        </a>
+        <hgroup class="introduce">
+          <h5 class="nickname">Slevin Hsu</h5>
+          <a href="mailto:hfxu@rinslet.com" title="hfxu@rinslet.com" class="mail">hfxu@rinslet.com</a>
+        </hgroup>
+      </div>
+    </div>
+    <div class="scroll-wrap flex-col">
+      <ul class="nav">
+        
+            <li class="waves-block waves-effect">
+              <a href="/"  >
+                <i class="icon icon-lg icon-home"></i>
+                主页
+              </a>
+            </li>
+        
+            <li class="waves-block waves-effect">
+              <a href="/archives"  >
+                <i class="icon icon-lg icon-archives"></i>
+                Archives
+              </a>
+            </li>
+        
+            <li class="waves-block waves-effect">
+              <a href="/tags"  >
+                <i class="icon icon-lg icon-tags"></i>
+                Tags
+              </a>
+            </li>
+        
+            <li class="waves-block waves-effect">
+              <a href="/categories"  >
+                <i class="icon icon-lg icon-th-list"></i>
+                Categories
+              </a>
+            </li>
+        
+            <li class="waves-block waves-effect">
+              <a href="https://github.com/hfxu" target="_blank" >
+                <i class="icon icon-lg icon-github"></i>
+                Github
+              </a>
+            </li>
+        
+            <li class="waves-block waves-effect">
+              <a href="http://www.slevinhsu.com"  >
+                <i class="icon icon-lg icon-link"></i>
+                主站
+              </a>
+            </li>
+        
+      </ul>
+    </div>
+  </div>
+</aside>
+
+    <main id="main">
+        <header class="top-header" id="header">
+    <div class="flex-row">
+        <a href="javascript:;" class="header-icon waves-effect waves-circle waves-light on" id="menu-toggle">
+          <i class="icon icon-lg icon-navicon"></i>
+        </a>
+        <div class="flex-col header-title ellipsis">NGINX 代理TOMCAT请求与静态缓存</div>
+        
+        <div class="search-wrap" id="search-wrap">
+            <a href="javascript:;" class="header-icon waves-effect waves-circle waves-light" id="back">
+                <i class="icon icon-lg icon-chevron-left"></i>
+            </a>
+            <input type="text" id="key" class="search-input" autocomplete="off" placeholder="Search">
+            <a href="javascript:;" class="header-icon waves-effect waves-circle waves-light" id="search">
+                <i class="icon icon-lg icon-search"></i>
+            </a>
+        </div>
+        
+        
+        <a href="javascript:;" class="header-icon waves-effect waves-circle waves-light" id="menuShare">
+            <i class="icon icon-lg icon-share-alt"></i>
+        </a>
+        
+    </div>
+</header>
+<header class="content-header post-header">
+
+    <div class="container fade-scale">
+        <h1 class="title">NGINX 代理TOMCAT请求与静态缓存</h1>
+        <h5 class="subtitle">
+            
+                <time datetime="2018-04-25T10:33:18.000Z" itemprop="datePublished" class="page-time">
+  2018-04-25
+</time>
+
+
+            
+        </h5>
+    </div>
+
+    
+
+
+</header>
+
+
+<div class="container body-wrap">
+    
+    <aside class="post-widget">
+        <nav class="post-toc-wrap post-toc-shrink" id="post-toc">
+            <h4>TOC</h4>
+            <ol class="post-toc"><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#安装"><span class="post-toc-number">1.</span> <span class="post-toc-text">安装</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#系统环境"><span class="post-toc-number">1.0.1.</span> <span class="post-toc-text">系统环境</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#安装Nginx"><span class="post-toc-number">1.0.2.</span> <span class="post-toc-text">安装Nginx</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#安装Tomcat"><span class="post-toc-number">1.0.3.</span> <span class="post-toc-text">安装Tomcat</span></a></li></ol></li></ol></li><li class="post-toc-item post-toc-level-2"><a class="post-toc-link" href="#配置"><span class="post-toc-number">2.</span> <span class="post-toc-text">配置</span></a><ol class="post-toc-child"><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#配置Nginx"><span class="post-toc-number">2.0.1.</span> <span class="post-toc-text">配置Nginx</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#文件目录说明"><span class="post-toc-number">2.0.2.</span> <span class="post-toc-text">文件目录说明</span></a></li><li class="post-toc-item post-toc-level-4"><a class="post-toc-link" href="#访问"><span class="post-toc-number">2.0.3.</span> <span class="post-toc-text">访问</span></a></li></ol></li></ol></li></ol>
+        </nav>
+    </aside>
+
+
+<article id="post-NGINX 代理TOMCAT请求与静态缓存"
+  class="post-article article-type-post fade" itemprop="blogPost">
+
+    <div class="post-card">
+        <h1 class="post-card-title">NGINX 代理TOMCAT请求与静态缓存</h1>
+        <div class="post-meta">
+            <time class="post-time" title="2018-04-25 18:33:18" datetime="2018-04-25T10:33:18.000Z"  itemprop="datePublished">2018-04-25</time>
+
+            
+
+
+            
+<span id="busuanzi_container_page_pv" title="文章总阅读量" style='display:none'>
+    <i class="icon icon-eye icon-pr"></i><span id="busuanzi_value_page_pv"></span>
+</span>
+
+
+        </div>
+        <div class="post-content" id="post-content" itemprop="postContent">
+            <p>通常情况下，我们会使用一个静态Web容器代理Tomcat或Jetty容器中的网络请求，实现将动态请求部分交由Tomcat处理，静态文件由Nginx来做缓存管理。</p>
+<h2 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h2><h4 id="系统环境"><a href="#系统环境" class="headerlink" title="系统环境"></a>系统环境</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">CentOS 6.5</span><br></pre></td></tr></table></figure>
+<h4 id="安装Nginx"><a href="#安装Nginx" class="headerlink" title="安装Nginx"></a>安装Nginx</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yum install nginx</span><br></pre></td></tr></table></figure>
+<h4 id="安装Tomcat"><a href="#安装Tomcat" class="headerlink" title="安装Tomcat"></a>安装Tomcat</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">访问 http://tomcat.apache.org/ 下载与jre相适应的Tomcat</span><br></pre></td></tr></table></figure>
+<h2 id="配置"><a href="#配置" class="headerlink" title="配置"></a>配置</h2><h4 id="配置Nginx"><a href="#配置Nginx" class="headerlink" title="配置Nginx"></a>配置Nginx</h4><p>通过yum安装的Nginx配置一般位于<code>/etc/nginx/</code>目录，而server的配置文件主要在<code>/etc/nginx/conf.d/</code>目录。打开默认的<code>default.conf</code>文件或新建一个，建立如下配置：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line">#</span><br><span class="line"># HTTPS server configuration</span><br><span class="line">#</span><br><span class="line">server &#123;</span><br><span class="line">    listen       80;</span><br><span class="line">    server_name &quot;~^(?&lt;sub&gt;.+)\.example\.com$&quot;; # 代理*.example.com域名的请求</span><br><span class="line">    root         /usr/share/nginx/html/$sub; # 并根据二级域名请求对于目录的资源</span><br><span class="line"></span><br><span class="line">    error_page 404 /404.html;</span><br><span class="line">        location = /40x.html &#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    error_page 500 502 503 504 /50x.html;</span><br><span class="line">        location = /50x.html &#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    location ~* \.(css|js|gif|jpe?g|png|xlsx?|docx?|apk|ipa|ico|mp3|ogg|eot|woff2?|svg|ttf|pdf|html?)$ &#123;</span><br><span class="line">        expires 7d;</span><br><span class="line">    &#125;# 代理这些后缀的静态文件，过期日期为7天，缓存时间设置长一点可极大的提升再次打开页面的速度，但也会对实时更新造成影响。</span><br><span class="line"></span><br><span class="line">    location / &#123;</span><br><span class="line">		try_files $uri $uri/ =404;</span><br><span class="line">    &#125; # 默认由Nginx代理所有请求</span><br><span class="line">    </span><br><span class="line">    location ~ ^/(sysa|sysb)/ &#123;</span><br><span class="line">        proxy_pass http://127.0.0.1:8080;</span><br><span class="line">        proxy_set_header X-Forwarded-Host $host;</span><br><span class="line">        proxy_set_header X-Forwarded-Server $host;</span><br><span class="line">        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;</span><br><span class="line">        proxy_set_header X-Forwarded-Proto https;</span><br><span class="line">        proxy_redirect off;</span><br><span class="line">        proxy_connect_timeout      240;</span><br><span class="line">        proxy_send_timeout         240;</span><br><span class="line">        proxy_read_timeout         240;</span><br><span class="line">    &#125; # sysa这些相当于war包的名字</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h4 id="文件目录说明"><a href="#文件目录说明" class="headerlink" title="文件目录说明"></a>文件目录说明</h4><p>Tomcat存放War包的目录：</p>
+<p><code>/usr/share/tomcat/webapps/sysa.war</code></p>
+<p><code>/usr/share/tomcat/webapps/sysb.war</code></p>
+<p>Nginx静态文件目录如下所示：</p>
+<p><code>/usr/share/nginx/html/www/sysa</code></p>
+<p><code>/usr/share/nginx/html/www/sysb</code></p>
+<p>在Nginx静态目录中<code>www</code>指的是二级域名，所以也可以改成其他目录，<code>sysa</code>、<code>sysb</code>这2个目录中主要存储这2个Web工程的静态文件。</p>
+<h4 id="访问"><a href="#访问" class="headerlink" title="访问"></a>访问</h4><p>配置完成后，通过<code>service nginx restart</code>启动Nginx，通过<code>tomcat/bin/startup.bat</code>启动Tomcat。</p>
+<p>然后浏览器输入如下地址访问，请自行替换成自己的二级域名：</p>
+<p><code>http://wwww.example.com/sysa/</code></p>
+
+        </div>
+
+        <blockquote class="post-copyright">
+    
+    <div class="content">
+        
+<span class="post-time">
+    Last updated: <time datetime="2018-04-28T07:57:07.874Z" itemprop="dateUpdated">2018-04-28 15:57:07</time>
+</span><br>
+
+
+        
+        这里可以写作者留言，标签和 hexo 中所有变量及辅助函数等均可调用，示例：<a href="/2018/04/25/NGINX 代理TOMCAT请求与静态缓存/" target="_blank" rel="external">http://blog.slevinhsu.com/2018/04/25/NGINX 代理TOMCAT请求与静态缓存/</a>
+        
+    </div>
+    
+    <footer>
+        <a href="http://blog.slevinhsu.com">
+            <img src="/img/avatar.gif" alt="Slevin Hsu">
+            Slevin Hsu
+        </a>
+    </footer>
+</blockquote>
+
+        
+
+
+        <div class="post-footer">
+            
+	<ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/NGINX/">NGINX</a></li></ul>
+
+
+            
+<div class="page-share-wrap">
+    
+
+<div class="page-share" id="pageShare">
+    <ul class="reset share-icons">
+      <li>
+        <a class="weibo share-sns" target="_blank" href="http://service.weibo.com/share/share.php?url=http://blog.slevinhsu.com/2018/04/25/NGINX 代理TOMCAT请求与静态缓存/&title=《NGINX 代理TOMCAT请求与静态缓存》 — Slevin\'s Blog&pic=http://blog.slevinhsu.com/img/avatar.gif" data-title="微博">
+          <i class="icon icon-weibo"></i>
+        </a>
+      </li>
+      <li>
+        <a class="weixin share-sns wxFab" href="javascript:;" data-title="微信">
+          <i class="icon icon-weixin"></i>
+        </a>
+      </li>
+      <li>
+        <a class="qq share-sns" target="_blank" href="http://connect.qq.com/widget/shareqq/index.html?url=http://blog.slevinhsu.com/2018/04/25/NGINX 代理TOMCAT请求与静态缓存/&title=《NGINX 代理TOMCAT请求与静态缓存》 — Slevin\'s Blog&source=" data-title=" QQ">
+          <i class="icon icon-qq"></i>
+        </a>
+      </li>
+      <li>
+        <a class="facebook share-sns" target="_blank" href="https://www.facebook.com/sharer/sharer.php?u=http://blog.slevinhsu.com/2018/04/25/NGINX 代理TOMCAT请求与静态缓存/" data-title=" Facebook">
+          <i class="icon icon-facebook"></i>
+        </a>
+      </li>
+      <li>
+        <a class="twitter share-sns" target="_blank" href="https://twitter.com/intent/tweet?text=《NGINX 代理TOMCAT请求与静态缓存》 — Slevin\'s Blog&url=http://blog.slevinhsu.com/2018/04/25/NGINX 代理TOMCAT请求与静态缓存/&via=http://blog.slevinhsu.com" data-title=" Twitter">
+          <i class="icon icon-twitter"></i>
+        </a>
+      </li>
+      <li>
+        <a class="google share-sns" target="_blank" href="https://plus.google.com/share?url=http://blog.slevinhsu.com/2018/04/25/NGINX 代理TOMCAT请求与静态缓存/" data-title=" Google+">
+          <i class="icon icon-google-plus"></i>
+        </a>
+      </li>
+    </ul>
+ </div>
+
+
+
+    <a href="javascript:;" id="shareFab" class="page-share-fab waves-effect waves-circle">
+        <i class="icon icon-share-alt icon-lg"></i>
+    </a>
+</div>
+
+
+
+        </div>
+    </div>
+
+    
+<nav class="post-nav flex-row flex-justify-between flex-row-reverse">
+  
+
+  
+    <div class="waves-block waves-effect next">
+      <a href="/2018/04/25/hello-world/" id="post-next" class="post-nav-link">
+        <div class="tips">Next <i class="icon icon-angle-right icon-lg icon-pl"></i></div>
+        <h4 class="title">Hello World</h4>
+      </a>
+    </div>
+  
+</nav>
+
+
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</article>
+
+
+
+</div>
+
+        <footer class="footer">
+    <div class="top">
+        
+<p>
+    <span id="busuanzi_container_site_uv" style='display:none'>
+        站点总访客数：<span id="busuanzi_value_site_uv"></span>
+    </span>
+    <span id="busuanzi_container_site_pv" style='display:none'>
+        站点总访问量：<span id="busuanzi_value_site_pv"></span>
+    </span>
+</p>
+
+
+        <p>
+            
+                <span><a href="/atom.xml" target="_blank" class="rss" title="rss"><i class="icon icon-lg icon-rss"></i></a></span>
+            
+            <span>This blog is licensed under a <a rel="license" href="https://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution 4.0 International License</a>.</span>
+        </p>
+    </div>
+    <div class="bottom">
+        <p><span>Slevin Hsu &copy; 2018</span>
+            <span>
+                
+                <a href="http://www.miitbeian.gov.cn/" target="_blank">沪ICP备18009109号-1</a><br>
+                
+                Power by <a href="http://hexo.io/" target="_blank">Hexo</a> Theme <a href="https://github.com/yscoder/hexo-theme-indigo" target="_blank">indigo</a>
+            </span>
+        </p>
+    </div>
+</footer>
+
+    </main>
+    <div class="mask" id="mask"></div>
+<a href="javascript:;" id="gotop" class="waves-effect waves-circle waves-light"><span class="icon icon-lg icon-chevron-up"></span></a>
+
+
+
+<div class="global-share" id="globalShare">
+    <ul class="reset share-icons">
+      <li>
+        <a class="weibo share-sns" target="_blank" href="http://service.weibo.com/share/share.php?url=http://blog.slevinhsu.com/2018/04/25/NGINX 代理TOMCAT请求与静态缓存/&title=《NGINX 代理TOMCAT请求与静态缓存》 — Slevin\'s Blog&pic=http://blog.slevinhsu.com/img/avatar.gif" data-title="微博">
+          <i class="icon icon-weibo"></i>
+        </a>
+      </li>
+      <li>
+        <a class="weixin share-sns wxFab" href="javascript:;" data-title="微信">
+          <i class="icon icon-weixin"></i>
+        </a>
+      </li>
+      <li>
+        <a class="qq share-sns" target="_blank" href="http://connect.qq.com/widget/shareqq/index.html?url=http://blog.slevinhsu.com/2018/04/25/NGINX 代理TOMCAT请求与静态缓存/&title=《NGINX 代理TOMCAT请求与静态缓存》 — Slevin\'s Blog&source=" data-title=" QQ">
+          <i class="icon icon-qq"></i>
+        </a>
+      </li>
+      <li>
+        <a class="facebook share-sns" target="_blank" href="https://www.facebook.com/sharer/sharer.php?u=http://blog.slevinhsu.com/2018/04/25/NGINX 代理TOMCAT请求与静态缓存/" data-title=" Facebook">
+          <i class="icon icon-facebook"></i>
+        </a>
+      </li>
+      <li>
+        <a class="twitter share-sns" target="_blank" href="https://twitter.com/intent/tweet?text=《NGINX 代理TOMCAT请求与静态缓存》 — Slevin\'s Blog&url=http://blog.slevinhsu.com/2018/04/25/NGINX 代理TOMCAT请求与静态缓存/&via=http://blog.slevinhsu.com" data-title=" Twitter">
+          <i class="icon icon-twitter"></i>
+        </a>
+      </li>
+      <li>
+        <a class="google share-sns" target="_blank" href="https://plus.google.com/share?url=http://blog.slevinhsu.com/2018/04/25/NGINX 代理TOMCAT请求与静态缓存/" data-title=" Google+">
+          <i class="icon icon-google-plus"></i>
+        </a>
+      </li>
+    </ul>
+ </div>
+
+
+<div class="page-modal wx-share" id="wxShare">
+    <a class="close" href="javascript:;"><i class="icon icon-close"></i></a>
+    <p>扫一扫，分享到微信</p>
+    <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAN4AAADeCAAAAAB3DOFrAAAC0ElEQVR42u3aQW7jMBAEQP//01kg2MMCC0vdM2LiQ+kUyLLFYgBx1MPXKz6+vo/rM/9/mnzr3zPJb75OHHh4eHijob87rq+5HnRyzfVIrifielR4eHh4p3nXD+L2lvmCkQ86WULw8PDwPo2XFLvXi0p+pl1m8PDw8D6Zly8AyRA3k4iHh4f3u7y8hG1jiDb2zcfwcNaCh4eHF/PaBtgn/H2wv4eHh4e36KrPHrhJrJAvMLNx/v0uHh4e3gHedcM+ISXN/nyLwGwMN9OKh4eH9yO8Wftq0zzb3PEm+MDDw8N7lNe26pNlIG+YJROalPU3bwx4eHh4x3j7jVBtudzGEPVGBzw8PLwDvFmZ2y4AyS+31+R3xMPDwzvBm91stgAUGckoMn6bteDh4eEd5uXt/9l2gXbxWG3AwsPDw3uUlxfKs0Ah3xo1C2pvxoOHh4d3jLdp9rcNqnw3VF5q1zEEHh4e3oK3L7hnC0Be8eabro68T+Dh4eFdbh1of6596581+/OpeWBPGR4eHl73/j7cwFT86KMtrs204uHh4e15s4ZWEsi2j/v2DSCKg/Hw8PAe5RXNpFF80IbFs2Xj5o0BDw8P7wBvc7P8TL7dat+cez01l3h4eHhvPp21/PPrN9HDrGt388aAh4eHt+DNhj5rjOVDbAv94v+Gh4eHt+YlC0BbKLebU/Oye7Z9AQ8PD+9Z3iaWnW3YaheDPETGw8PD+3ne5sZ5xDCbvmFzDg8PD+8AbxaqtsHrjDoLhaNIAg8PD2/B+yqPvICeBQoz9tu74+Hh4R3g5Uf08l8Wx3mhnMe47SYDPDw8vBlv1praRBj7JadYVPDw8PCO8TblbzusfOLy5tnbkhoPDw/vV3n50NvHdx4Kt+EyHh4e3ifwZrfPI9q2IXdzHg8PD+8YLy98N8tAEr/mce2RGBcPDw/vQANsFtS2DbMHimk8PDy853l/ANeEIhYA5recAAAAAElFTkSuQmCC" alt="微信分享二维码">
+</div>
+
+
+
+
+    <script src="//cdn.bootcss.com/node-waves/0.7.4/waves.min.js"></script>
+<script>
+var BLOG = { ROOT: '/', SHARE: true, REWARD: false };
+
+
+</script>
+
+<script src="//unpkg.com/hexo-theme-material-indigo@latest/js/main.min.js"></script>
+
+
+<div class="search-panel" id="search-panel">
+    <ul class="search-result" id="search-result"></ul>
+</div>
+<template id="search-tpl">
+<li class="item">
+    <a href="{path}" class="waves-block waves-effect">
+        <div class="title ellipsis" title="{title}">{title}</div>
+        <div class="flex-row flex-middle">
+            <div class="tags ellipsis">
+                {tags}
+            </div>
+            <time class="flex-col time">{date}</time>
+        </div>
+    </a>
+</li>
+</template>
+
+<script src="//unpkg.com/hexo-theme-material-indigo@latest/js/search.min.js" async></script>
+
+
+
+
+
+
+<script async src="//dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+<script>
+(function() {
+    var OriginTitile = document.title, titleTime;
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+            document.title = 'Slevin\'s Blog';
+            clearTimeout(titleTime);
+        } else {
+            document.title = 'Slevin\'s Blog';
+            titleTime = setTimeout(function() {
+                document.title = OriginTitile;
+            },2000);
+        }
+    });
+})();
+</script>
+
+
+
+</body>
+</html>
